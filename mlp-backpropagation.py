@@ -3,7 +3,7 @@ import seaborn as sns
 import matplotlib.pyplot as plt
 from numpy import genfromtxt
 
-
+# Same Random
 np.random.seed(1)
 
 def sigmoid(x):
@@ -77,6 +77,7 @@ def kfold(Xtrain0,Xtrain1,Xtrain2,Xtrain3,Xtrain4,Xval0,Xval1,Xval2,Xval3,Xval4,
     
     return Xtrain, Xval, Ttrain, Tval
 
+# SOFTMAX
 def train_and_validate(X,T,W1,b1,W2,b2,counter,epochs):
     Xtrain0,Xtrain1,Xtrain2,Xtrain3,Xtrain4,Xval0,Xval1,Xval2,Xval3,Xval4,Ttrain0,Ttrain1,Ttrain2,Ttrain3,Ttrain4,Tval0,Tval1,Tval2,Tval3,Tval4 = split(X,T)
 
@@ -88,7 +89,7 @@ def train_and_validate(X,T,W1,b1,W2,b2,counter,epochs):
         # forward pass
         A = sigmoid(Xtrain.dot(W1) + b1) # A = sigma(Z)
         Y = softmax(A.dot(W2) + b2) # Y = softmax(Z2)
-        #Y = sigmoid(A.dot(W2) + b2) # Y = softmax(Z2)
+        #Y = sigmoid(A.dot(W2) + b2) 
 
         # backward pass
         delta2 = Y - Ttrain
@@ -106,16 +107,57 @@ def train_and_validate(X,T,W1,b1,W2,b2,counter,epochs):
         #print('Loss function value: ', loss)
         costsTrain.append(loss)
 
-        ## validate
+        ## VALIDATE
         # forward pass
         Aval = sigmoid(Xval.dot(W1) + b1)
         Yval = softmax(Aval.dot(W2) + b2)
+        #Yval = sigmoid(Aval.dot(W2) + b2)
 
         #loss = np.average(-Tval * np.log(Yval))
         loss = np.average((Tval - Yval)**2)
         #print('Loss function value: ', loss)
         costsVal.append(loss)
-    
+
+# SIGMOID
+def train_and_validate2(X,T,W1,b1,W2,b2,counter,epochs):
+    Xtrain0,Xtrain1,Xtrain2,Xtrain3,Xtrain4,Xval0,Xval1,Xval2,Xval3,Xval4,Ttrain0,Ttrain1,Ttrain2,Ttrain3,Ttrain4,Tval0,Tval1,Tval2,Tval3,Tval4 = split(X,T)
+
+    for epoch in range(epochs):
+        ## KFOLD
+        Xtrain, Xval, Ttrain, Tval = kfold(Xtrain0,Xtrain1,Xtrain2,Xtrain3,Xtrain4,Xval0,Xval1,Xval2,Xval3,Xval4,Ttrain0,Ttrain1,Ttrain2,Ttrain3,Ttrain4,Tval0,Tval1,Tval2,Tval3,Tval4,counter)
+
+        ## TRAIN
+        # forward pass
+        A = sigmoid(Xtrain.dot(W1) + b1) # A = sigma(Z)
+        #Y = softmax(A.dot(W2) + b2) # Y = softmax(Z2)
+        Y = sigmoid(A.dot(W2) + b2) 
+
+        # backward pass
+        delta2 = Y - Ttrain
+        delta1 = (delta2).dot(W2.T) * A * (1 - A)
+
+        W2 -= alpha * A.T.dot(delta2)
+        b2 -= alpha * (delta2).sum(axis=0)
+
+        W1 -= alpha * Xtrain.T.dot(delta1)
+        b1 -= alpha * (delta1).sum(axis=0)
+
+        # save loss function values across training iterations
+        #loss = np.average(-Ttrain * np.log(Y))
+        loss = np.average((Ttrain - Y)**2)
+        #print('Loss function value: ', loss)
+        costsTrain2.append(loss)
+
+        ## VALIDATE
+        # forward pass
+        Aval = sigmoid(Xval.dot(W1) + b1)
+        #Yval = softmax(Aval.dot(W2) + b2)
+        Yval = sigmoid(Aval.dot(W2) + b2)
+
+        #loss = np.average(-Tval * np.log(Yval))
+        loss = np.average((Tval - Yval)**2)
+        #print('Loss function value: ', loss)
+        costsVal2.append(loss)
 
 # data input
 X = genfromtxt('iris.txt', delimiter=',')
@@ -138,14 +180,27 @@ alpha = 10e-4
 counter = 0
 costsTrain = []
 costsVal = []
+costsTrain2 = []
+costsVal2 = []
 
+# softmax backpropagation
 # initial weights
 W1 = np.random.randn(features, hidden_nodes)
 b1 = np.random.randn(hidden_nodes)
 W2 = np.random.randn(hidden_nodes, classes)
 b2 = np.random.randn(classes)
 
-train_and_validate(X,T,W1,b1,W2,b2,counter,10000)
+train_and_validate(X,T,W1,b1,W2,b2,counter,100)
+
+# sigmoid backpropagation
+# re-initial weights (set to seed = 1)
+W1 = np.random.randn(features, hidden_nodes)
+b1 = np.random.randn(hidden_nodes)
+W2 = np.random.randn(hidden_nodes, classes)
+b2 = np.random.randn(classes)
+
+train_and_validate2(X,T,W1,b1,W2,b2,counter,100)
+
 
 # Plot
 fig = plt.figure()
@@ -153,7 +208,9 @@ fig.suptitle('MSE Graph')
 sns.set_style("darkgrid")
 plt.xlabel('Epoch')
 plt.ylabel('MSE')
-plt.plot(costsTrain, label = "Train")
-plt.plot(costsVal, label = "Val")
+plt.plot(costsTrain, label = "Train Softmax")
+plt.plot(costsVal, label = "Val Softmax")
+plt.plot(costsTrain2, label = "Train Sigmoid")
+plt.plot(costsVal2, label = "Val Sigmoid")
 plt.legend(loc='best')
 plt.show()
