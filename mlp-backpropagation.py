@@ -145,7 +145,7 @@ b1 = np.random.randn(hidden_nodes)
 W2 = np.random.randn(hidden_nodes, classes)
 b2 = np.random.randn(classes)
 
-train_and_validate(X,T,W1,b1,W2,b2,counter,100)
+train_and_validate(X,T,W1,b1,W2,b2,counter,10000)
 
 # Plot
 fig = plt.figure()
